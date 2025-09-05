@@ -1,0 +1,209 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Company Form",
+        "formDescription": "In this form, we will collect information about your company.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company name",
+              "placeholder": "e.g Tech Solutions S.A",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Employee Count",
+              "fieldType": "number",
+              "placeholder": "e.g. 45",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Net Income per month (USD)",
+              "fieldType": "number",
+              "placeholder": "e.g 25000",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Your email",
+              "fieldType": "email",
+              "placeholder": "test@email.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Industry",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "IT"
+                  },
+                  {
+                    "option": "Services"
+                  },
+                  {
+                    "option": "Retail"
+                  },
+                  {
+                    "option": "Food"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c38dbaff-8f95-4043-a705-07b400e2e2b4",
+      "name": "On form submission",
+      "webhookId": "2c333182-3ccf-4481-8e72-4f1790aa1d3d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a senior marketing strategist specializing in customized monthly strategies. Generate clean HTML responses for professional emails.\n\nGenerate a complete marketing strategy for August 2024 for the company “{{ $json.companyName }}” which has {{ $json.employeeCount }} employees and a monthly net income of {{ $json.netIncome }} USD.\n**INDUSTRY CONTEXT:**\n- **Trends:** {{ $json.industryTrends }}\n- **Main Competitors:** {{ $json.topCompetitors.join(', ') }}\n- **Recommended Channels:** {{ $json.recommendedChannels.join(', ') }}\n- **Recommended Budget:** ${{ $json.recommendedBudget }} ({{ $json.budgetPercentage * 100 }}% of income)\nSPECIFIC INSTRUCTIONS:\n- Format: Clean HTML for email (no complex inline CSS)\n- Include tags: <h2>, <h3>, <ul>, <li>, <p>\n- Maximum 400 words\n- Language: Professional English\n\nREQUIRED SECTIONS:\n1. EXECUTIVE SUMMARY (main objectives for August)\n2. RECOMMENDED BUDGET (based on {{ $json.netIncome }} USD)\n3. SPECIFIC TACTICS FOR AUGUST\n4. SUCCESS METRICS (main KPIs)\n5. RECOMMENDATIONS BY SIZE ( {{ $json.employeeCount }} employees)\n6. Industry Analysis ({{ $json.industryTrends }}, {{ $json.topCompetitors }},{{ $json.recommendedChannels }})\n\nAPPROACH BY SIZE:\n( {{ $json.employeeCount }}< 10) ? \n“Startup: focus on growth hacking and organic marketing” : \n({{ $json.employeeCount }} < 50) ? \n“SME: balance between organic and paid marketing” : \n“Corporate: integrated multichannel strategy”}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "75ced044-a5ae-492e-803e-12fc9bc3cd67",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        416,
+        176
+      ],
+      "id": "ae3e2f47-4072-4110-a1df-a27edad0f37d",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "message": "={{ $json.emailHtml }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "48fe614b-a9c8-4458-91d5-9b9894f22eb4",
+      "name": "Send a message",
+      "webhookId": "2b9ac080-a098-4662-b523-fc0da574a2ee"
+    },
+    {
+      "parameters": {
+        "jsCode": "/// Validations\n\nif (!$input.first().json['Employee Count']||$input.first().json['Employee Count']  <= 0) {\n  throw new Error('The number of employees must be greater than 0.');\n}\n\nif (!$input.first().json['Net Income per month (USD)']|| $input.first().json['Net Income per month (USD)'] <= 0) {\n  throw new Error('Net income must be greater than 0.');\n}\n/// Industry research\nconst industryData = {\n  'IT': {\n    name: 'IT',\n    trends: 'AI integration, cloud services, cybersecurity, remote work solutions',\n    budgetPercentage: 0.12,\n    competitors: ['Google', 'Microsoft', 'Amazon AWS', 'Apple', 'IBM'],\n    channels: ['Google Ads', 'LinkedIn', 'Tech blogs', 'GitHub', 'Webinars']\n  },\n  'Food': {\n    name: 'Food',\n    trends: 'Plant-based products, delivery apps, sustainability, health-conscious options',\n    budgetPercentage: 0.08,\n    competitors: ['McDonalds', 'Starbucks', 'Domino\\'s', 'Subway'],\n    channels: ['Instagram', 'Uber Eats', 'Google My Business', 'Food blogs', 'Email marketing']\n  },\n  'Retail': {\n    name: 'Retail',\n    trends: 'E-commerce growth, omnichannel experience, personalization, fast delivery',\n    budgetPercentage: 0.10,\n    competitors: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Home Depot'],\n    channels: ['Google Shopping', 'Facebook Ads', 'Instagram', 'Email', 'Influencers']\n  },\n  'Services': {\n    name: 'Servicios (Services)',\n    trends: 'Digital transformation, consulting services, SaaS solutions, remote consulting',\n    budgetPercentage: 0.15,\n    competitors: ['Deloitte', 'Accenture', 'PwC', 'EY', 'BCG'],\n    channels: ['LinkedIn', 'Webinars', 'Content marketing', 'Email nurturing', 'Case studies']\n  }\n};\n\n\n\nconst selectedIndustry =$input.first().json.Industry ;\nconst industryInfo = industryData[selectedIndustry];\n\nconst recommendedBudget = Math.round($input.first().json['Net Income per month (USD)'] * industryInfo.budgetPercentage);\n\nconst competitorAnalysis = `\n**Competitive Analysis for ${industryInfo.name}**\n\n**Trends:** ${industryInfo.trends}\n\n**Main Competitors:** ${industryInfo.competitors.join(', ')}\n\n**Recommended Channels:** ${industryInfo.channels.join(', ')}\n\n**Recommended Budget:** $${recommendedBudget} (${industryInfo.budgetPercentage * 100}% de ingresos)\n`;\n\nreturn {\n  json: {\n    companyName: $input.first().json['Company name'],\n    employeeCount: parseInt($input.first().json['Employee Count']),\n    netIncome: parseFloat($input.first().json['Net Income per month (USD)']),\n     industry: $input.first().json.Industry,\n\n    industryTrends: industryInfo.trends,\n    topCompetitors: industryInfo.competitors,\n    recommendedChannels: industryInfo.channels,\n    recommendedBudget: recommendedBudget,\n    budgetPercentage: industryInfo.budgetPercentage,\n    competitorAnalysis: competitorAnalysis,    \n    industryContext: `Industry: ${industryInfo.name}. Trends: ${industryInfo.trends}. Competitors: ${industryInfo.competitors.join(', ')}.`\n    \n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "364a5a34-2840-4337-ac91-dc88b53dc23a",
+      "name": "Error Handler"
+    },
+    {
+      "parameters": {
+        "jsCode": "const companyName = $('Error Handler').first().json.companyName;\nconst employeeCount =$('Error Handler').first().json.employeeCount ;\nconst netIncome = $('Error Handler').first().json.netIncome;\nconst marketingStrategy = $input.first().json.output;\nconst cleanMarketingStrategy = marketingStrategy.replace(/```html|```/g, '').trim();\nconst industry = $('Error Handler').first().json.industry;\nconst emailHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style>\n        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }\n        .content { padding: 20px; background: #f9f9f9; }\n        .footer { padding: 15px; text-align: center; font-size: 12px; color: #666; }\n        h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px; }\n        ul { padding-left: 20px; }\n        li { margin-bottom: 8px; }\n        .highlight { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin-bottom: 20px; }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h1>🎯 Marketing Strategy - August 2025</h1>\n        <p><strong>${companyName}</strong> | ${employeeCount} employees</p>\n    </div>\n    \n    <div class=\"content\">\n        <div class=\"highlight\">\n            <p><strong>📊 Company Data:</strong><br>\n            •  Net Income: $${netIncome} USD/month<br>\n            • Industry: ${industry} <br>\n            • Date generated: ${new Date().toLocaleDateString('es-ES')}</p>\n        </div>\n        \n        ${cleanMarketingStrategy}\n    </div>\n    \n    <div class=\"footer\">\n        <p>🤖 Automatically generated by Google Gemini AI<br>\n        📧 This is an automated email - Do not reply</p>\n    </div>\n</body>\n</html>\n`;\n\nconst emailSubject = `🚀 August Marketing Strategy - ${companyName}`;\n\nreturn [\n  {\n    json: {\n      emailHtml: emailHtml,\n      emailSubject: emailSubject,\n      email:$('On form submission').first().json['Your email']\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        0
+      ],
+      "id": "44f7fd59-4ba3-49db-af50-ca8e4c9d0f67",
+      "name": "Email body & subject"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Email body & subject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email body & subject": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "22df7156-1881-468e-ba5c-254497ede754",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c8c5d9a48c223d1ebc2c5b8fc3dce1b890b78432f201537a6e59509dad12cf41"
+  },
+  "id": "psrvo5TXmz6jMlSG",
+  "tags": []
+}
